@@ -925,367 +925,55 @@ askSlider.addEventListener('input', () => {
   safNeeded.textContent = kt + ' kt';
 });
 </script>
-        // Initialize Mermaid with custom config
-        mermaid.initialize({
-            startOnLoad: true,
-            theme: 'base',
-            themeVariables: {
-                primaryColor: '#1e3a8a',
-                primaryTextColor: '#1f2937',
-                primaryBorderColor: '#f59e0b',
-                lineColor: '#374151',
-                secondaryColor: '#10b981',
-                tertiaryColor: '#f43f5e',
-                background: '#ffffff',
-                mainBkg: '#ffffff',
-                secondBkg: '#f9fafb',
-                tertiaryBkg: '#f3f4f6',
-                // Ensure good contrast for different node types
-                cScale0: '#1e3a8a',
-                cScale1: '#10b981', 
-                cScale2: '#f59e0b',
-                cScale3: '#f43f5e',
-                cScale4: '#8b5cf6',
-                cScale5: '#06b6d4',
-                cScale6: '#84cc16',
-                cScale7: '#f97316',
-                // Text colors for each scale
-                cScale0Text: '#ffffff',
-                cScale1Text: '#ffffff',
-                cScale2Text: '#1f2937',
-                cScale3Text: '#ffffff',
-                cScale4Text: '#ffffff',
-                cScale5Text: '#ffffff',
-                cScale6Text: '#1f2937',
-                cScale7Text: '#ffffff'
-            },
-            flowchart: {
-                useMaxWidth: false,
-                htmlLabels: true,
-                curve: 'basis',
-                padding: 20
-            },
-            sequence: {
-                useMaxWidth: false,
-                padding: 20
-            },
-            gantt: {
-                useMaxWidth: false,
-                padding: 20
-            }
-        });
-
-        // Initialize Mermaid Controls for zoom and pan
-        function initializeMermaidControls() {
-            const containers = document.querySelectorAll('.mermaid-container');
-
-            containers.forEach(container => {
-            const mermaidElement = container.querySelector('.mermaid');
-            let scale = 1;
-            let isDragging = false;
-            let startX, startY, translateX = 0, translateY = 0;
-
-            // 触摸相关状态
-            let isTouch = false;
-            let touchStartTime = 0;
-            let initialDistance = 0;
-            let initialScale = 1;
-            let isPinching = false;
-
-            // Zoom controls
-            const zoomInBtn = container.querySelector('.zoom-in');
-            const zoomOutBtn = container.querySelector('.zoom-out');
-            const resetBtn = container.querySelector('.reset-zoom');
-            const fullscreenBtn = container.querySelector('.fullscreen');
-
-            function updateTransform() {
-                mermaidElement.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-
-                if (scale > 1) {
-                container.classList.add('zoomed');
-                } else {
-                container.classList.remove('zoomed');
-                }
-
-                mermaidElement.style.cursor = isDragging ? 'grabbing' : 'grab';
-            }
-
-            if (zoomInBtn) {
-                zoomInBtn.addEventListener('click', () => {
-                scale = Math.min(scale * 1.25, 4);
-                updateTransform();
-                });
-            }
-
-            if (zoomOutBtn) {
-                zoomOutBtn.addEventListener('click', () => {
-                scale = Math.max(scale / 1.25, 0.3);
-                if (scale <= 1) {
-                    translateX = 0;
-                    translateY = 0;
-                }
-                updateTransform();
-                });
-            }
-
-            if (resetBtn) {
-                resetBtn.addEventListener('click', () => {
-                scale = 1;
-                translateX = 0;
-                translateY = 0;
-                updateTransform();
-                });
-            }
-
-            if (fullscreenBtn) {
-                fullscreenBtn.addEventListener('click', () => {
-                if (container.requestFullscreen) {
-                    container.requestFullscreen();
-                } else if (container.webkitRequestFullscreen) {
-                    container.webkitRequestFullscreen();
-                } else if (container.msRequestFullscreen) {
-                    container.msRequestFullscreen();
-                }
-                });
-            }
-
-            // Mouse Events
-            mermaidElement.addEventListener('mousedown', (e) => {
-                if (isTouch) return; // 如果是触摸设备，忽略鼠标事件
-
-                isDragging = true;
-                startX = e.clientX - translateX;
-                startY = e.clientY - translateY;
-                mermaidElement.style.cursor = 'grabbing';
-                updateTransform();
-                e.preventDefault();
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (isDragging && !isTouch) {
-                translateX = e.clientX - startX;
-                translateY = e.clientY - startY;
-                updateTransform();
-                }
-            });
-
-            document.addEventListener('mouseup', () => {
-                if (isDragging && !isTouch) {
-                isDragging = false;
-                mermaidElement.style.cursor = 'grab';
-                updateTransform();
-                }
-            });
-
-            document.addEventListener('mouseleave', () => {
-                if (isDragging && !isTouch) {
-                isDragging = false;
-                mermaidElement.style.cursor = 'grab';
-                updateTransform();
-                }
-            });
-
-            // 获取两点之间的距离
-            function getTouchDistance(touch1, touch2) {
-                return Math.hypot(
-                touch2.clientX - touch1.clientX,
-                touch2.clientY - touch1.clientY
-                );
-            }
-
-            // Touch Events - 触摸事件处理
-            mermaidElement.addEventListener('touchstart', (e) => {
-                isTouch = true;
-                touchStartTime = Date.now();
-
-                if (e.touches.length === 1) {
-                // 单指拖动
-                isPinching = false;
-                isDragging = true;
-
-                const touch = e.touches[0];
-                startX = touch.clientX - translateX;
-                startY = touch.clientY - translateY;
-
-                } else if (e.touches.length === 2) {
-                // 双指缩放
-                isPinching = true;
-                isDragging = false;
-
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-                initialDistance = getTouchDistance(touch1, touch2);
-                initialScale = scale;
-                }
-
-                e.preventDefault();
-            }, { passive: false });
-
-            mermaidElement.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 1 && isDragging && !isPinching) {
-                // 单指拖动
-                const touch = e.touches[0];
-                translateX = touch.clientX - startX;
-                translateY = touch.clientY - startY;
-                updateTransform();
-
-                } else if (e.touches.length === 2 && isPinching) {
-                // 双指缩放
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-                const currentDistance = getTouchDistance(touch1, touch2);
-
-                if (initialDistance > 0) {
-                    const newScale = Math.min(Math.max(
-                    initialScale * (currentDistance / initialDistance),
-                    0.3
-                    ), 4);
-                    scale = newScale;
-                    updateTransform();
-                }
-                }
-
-                e.preventDefault();
-            }, { passive: false });
-
-            mermaidElement.addEventListener('touchend', (e) => {
-                // 重置状态
-                if (e.touches.length === 0) {
-                isDragging = false;
-                isPinching = false;
-                initialDistance = 0;
-
-                // 延迟重置isTouch，避免鼠标事件立即触发
-                setTimeout(() => {
-                    isTouch = false;
-                }, 100);
-                } else if (e.touches.length === 1 && isPinching) {
-                // 从双指变为单指，切换为拖动模式
-                isPinching = false;
-                isDragging = true;
-
-                const touch = e.touches[0];
-                startX = touch.clientX - translateX;
-                startY = touch.clientY - translateY;
-                }
-
-                updateTransform();
-            });
-
-            mermaidElement.addEventListener('touchcancel', (e) => {
-                isDragging = false;
-                isPinching = false;
-                initialDistance = 0;
-
-                setTimeout(() => {
-                isTouch = false;
-                }, 100);
-
-                updateTransform();
-            });
-
-            // Enhanced wheel zoom with better center point handling
-            container.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                const rect = container.getBoundingClientRect();
-                const centerX = rect.width / 2;
-                const centerY = rect.height / 2;
-
-                const delta = e.deltaY > 0 ? 0.9 : 1.1;
-                const newScale = Math.min(Math.max(scale * delta, 0.3), 4);
-
-                // Adjust translation to zoom towards center
-                if (newScale !== scale) {
-                const scaleDiff = newScale / scale;
-                translateX = translateX * scaleDiff;
-                translateY = translateY * scaleDiff;
-                scale = newScale;
-
-                if (scale <= 1) {
-                    translateX = 0;
-                    translateY = 0;
-                }
-
-                updateTransform();
-                }
-            });
-
-            // Initialize display
-            updateTransform();
-            });
-        }
-
-        // Initialize mermaid controls after page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(() => {
-                initializeMermaidControls();
-            }, 1000);
-        });
-
-        // Mobile TOC Toggle
-        function toggleTOC() {
-            const toc = document.getElementById('mobileTOC');
-            toc.classList.toggle('hidden');
-        }
-
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // Highlight active section in TOC
-        function highlightActiveSection() {
-            const sections = document.querySelectorAll('section[id]');
-            const tocLinks = document.querySelectorAll('.toc-link');
-            
-            let current = '';
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                const sectionHeight = section.clientHeight;
-                if (window.pageYOffset >= sectionTop - 200) {
-                    current = section.getAttribute('id');
-                }
-            });
-
-            tocLinks.forEach(link => {
-                link.classList.remove('bg-emerald-100', 'border-l-4', 'border-emerald-500');
-                if (link.getAttribute('href') === '#' + current) {
-                    link.classList.add('bg-emerald-100', 'border-l-4', 'border-emerald-500');
-                }
-            });
-        }
-
-        // Throttled scroll event listener
-        let ticking = false;
-        window.addEventListener('scroll', function() {
-            if (!ticking) {
-                requestAnimationFrame(function() {
-                    highlightActiveSection();
-                    ticking = false;
-                });
-                ticking = true;
-            }
-        });
-
-        // Close mobile TOC when clicking outside
-        document.getElementById('mobileTOC').addEventListener('click', function(e) {
-            if (e.target === this) {
-                toggleTOC();
-            }
-        });
-
-        // Initial highlight
-        highlightActiveSection();
-    </script>
+         <!-- References -->
+          <div class="bg-white p-8 rounded-lg shadow-sm">
+            <h3 class="font-serif text-2xl font-semibold text-navy mb-6">References</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+              <div class="space-y-2">
+                <div id="ref-458">[458] <a href="https://marketoutlookreport.news.blog/2025/07/07/india-aviation-market-growth-analysis-and-forecast-2025-2033/" class="text-blue-600 hover:underline">India Aviation Market Growth Analysis and Forecast 2025-2033</a>
+                </div>
+                <div id="ref-453">[453] <a href="https://infra.economictimes.indiatimes.com/news/aviation/indias-aviation-sector-february-2025-sees-11-04-growth-in-domestic-passenger-traffic/119412102" class="text-blue-600 hover:underline">India&#39;s Aviation Sector February 2025 Growth Report</a>
+                </div>
+                <div id="ref-526">[526] <a href="https://thebranddecoder.com/indian-aviation-market-2024-overview-trends/" class="text-blue-600 hover:underline">Indian Aviation Market 2024 Overview &amp; Trends</a>
+                </div>
+                <div id="ref-421">[421] <a href="https://www.pib.gov.in/PressReleasePage.aspx?PRID=2124459" class="text-blue-600 hover:underline">UDAN Scheme Progress Report - PIB</a>
+                </div>
+                <div id="ref-417">[417] <a href="https://inter-passengerterminalshow.com/Knowledge_Zone/news-list/india-aims-for-200-airports-by-2025-with-a-%E2%82%B992000-crore-investment/" class="text-blue-600 hover:underline">India Airport Infrastructure Investment</a>
+                </div>
+                <div id="ref-405">[405] <a href="https://www.airindia.com/in/en/newsroom/press-release/Air-India-unveils-There-is-an-Air-about-India-campaign.html" class="text-blue-600 hover:underline">Air India &#34;There is an Air About India&#34; Campaign</a>
+                </div>
+                <div id="ref-389">[389] <a href="https://iide.co/case-studies/marketing-strategy-of-interglobe-aviation-limited/" class="text-blue-600 hover:underline">IndiGo Marketing Strategy Analysis</a>
+                </div>
+                <div id="ref-393">[393] <a href="https://businesstravelerusa.com/news/delta-plots-india-comeback/" class="text-blue-600 hover:underline">Delta Air Lines India Partnership</a>
+                </div>
+                <div id="ref-285">[285] <a href="https://www.iscc-system.org/news/india-moves-towards-sustainable-aviation-iscc-and-nabcb-sign-memorandum-of-understanding-for-saf-certification/" class="text-blue-600 hover:underline">ISCC-NABCB SAF Certification MoU</a>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <div id="ref-266">[266] <a href="https://vurdhaan.com/india-saf-alliance-a-milestone-for-sustainable-aviation-in-india/" class="text-blue-600 hover:underline">India SAF Alliance Launch</a>
+                </div>
+                <div id="ref-251">[251] <a href="https://www.greenairnews.com/?p=3568" class="text-blue-600 hover:underline">IndiGo Sustainability Report</a>
+                </div>
+                <div id="ref-164">[164] <a href="https://corporate.spicejet.com/PressReleaseNewsPageNew.aspx?strNews=sustainableTransport" class="text-blue-600 hover:underline">SpiceJet Sustainable Transport Initiatives</a>
+                </div>
+                <div id="ref-116">[116] <a href="https://www.travelandtourworld.com/news/article/indigo-airlines-to-transform-global-aviation-with-ambitious-expansion-and-new-fleet-additions-for-2025-and-beyond/" class="text-blue-600 hover:underline">IndiGo Expansion and Fleet Additions</a>
+                </div>
+                <div id="ref-560">[560] <a href="https://www.financialexpress.com/business/airlines-aviation-indian-aviation-industry-soars-fy25-ends-with-7-8-growth-yoy-to-1657-million-3820506/" class="text-blue-600 hover:underline">Indian Aviation Industry FY25 Performance</a>
+                </div>
+                <div id="ref-325">[325] <a href="https://aviationa2z.com/index.php/2025/07/25/air-india-reports-billion-dollar-loss-in-fy25/" class="text-blue-600 hover:underline">Air India FY25 Financial Results</a>
+                </div>
+                <div id="ref-322">[322] <a href="https://infra.economictimes.indiatimes.com/news/ports-shipping/tata-sons-spore-airlines-invested-9558-cr-in-air-india-in-2024-25/122080927" class="text-blue-600 hover:underline">Tata Sons Investment in Air India</a>
+                </div>
+                <div id="ref-269">[269] <a href="https://vurdhaan.com/india-gears-up-for-green-aviation-preparing-for-corsia-and-saf-market/" class="text-blue-600 hover:underline">India CORSIA Preparation</a>
+                </div>
+                <div id="ref-270">[270] <a href="https://iclg.com/practice-areas/aviation-laws-and-regulations/india" class="text-blue-600 hover:underline">India Aviation Laws and Regulations</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
   
 
 </body></html>
